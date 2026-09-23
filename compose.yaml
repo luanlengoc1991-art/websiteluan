@@ -1,12 +1,11 @@
 services:
   alpha-hub:
-    build: .
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY}
     restart: unless-stopped
     ports:
       - "127.0.0.1:3000:3000"
     env_file: .env.local
-    environment:
-      ALPHA_DATA_DIR: /app/data
-      ALPHA_SECURE_COOKIE: "true"
-    volumes:
-      - ./data:/app/data

@@ -1,1 +1,1 @@
-export {database as getDb,sqlite} from './store';
+export {supabaseServer,alphaBucket} from './store';
