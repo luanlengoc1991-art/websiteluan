@@ -5,7 +5,7 @@
 - Run npm run typecheck and npm run build after meaningful changes; npm test verifies the backend against disposable data.
 - Never commit .env.local, admin passwords, session tokens, data/, uploads, or customer records.
 - Preserve same-origin native links and per-project routes. Do not restore the ChatGPT Sites auth headers or cloudflare:workers imports.
-- Auth uses single-admin, hashed opaque sessions in Supabase. Records use Supabase Postgres and files use the private alpha-assets Storage bucket. Secret keys are server-only. Keep RLS enabled and browser roles denied direct access. npm test uses a disposable HTTP fixture, not a live Supabase project.
+- Auth supports public Supabase email/Google members and one allowlisted Google admin, with hashed opaque sessions in Supabase. getCurrentUser is admin-only; getSignedInUser includes members. Never grant admin access from user_metadata or email/password signup. Records use Supabase Postgres and files use the private alpha-assets Storage bucket. Secret keys are server-only. Keep RLS enabled and browser roles denied direct access. npm test uses a disposable HTTP fixture, not a live Supabase project.
 - GitHub source and the old chatgpt.site deployment are separate. Do not claim automatic synchronization.
 
 ## Quy trình đã được chủ dự án xác nhận

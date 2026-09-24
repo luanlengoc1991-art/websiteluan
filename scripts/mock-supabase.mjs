@@ -2,7 +2,7 @@
 import {createServer} from 'node:http';
 export async function mockSupabase(){
  const tables={alpha_records:[],alpha_reservations:[],alpha_files:[],alpha_sessions:[],alpha_login_limits:[]},objects=new Map();
- const authCodes=new Map(),accessUsers=new Map();
+ const authCodes=new Map(),accessUsers=new Map(),members=new Map();
  const server=createServer(async(req,res)=>{try{
   if(req.headers.apikey!=='test-only-key'){res.writeHead(401).end();return;}
   const chunks=[];for await(const chunk of req)chunks.push(chunk);const raw=Buffer.concat(chunks),url=new URL(req.url,'http://test'),path=url.pathname;
@@ -10,6 +10,15 @@ export async function mockSupabase(){
   if(path.startsWith('/storage/v1/object/alpha-assets/')){if(req.method==='POST'){objects.set(path,raw);return send({});}if(req.method==='DELETE'){objects.delete(path);return send({});}if(!objects.has(path))return send({},404);res.writeHead(200).end(objects.get(path));return;}
   const data=raw.length?JSON.parse(raw):null;
   if(path==='/auth/v1/settings')return send({external:{google:true}});
+  if(path==='/auth/v1/signup'){
+   if(!members.has(data.email))members.set(data.email,{password:data.password,user:{id:'member-'+data.email,email:data.email,email_confirmed_at:null,identities:[{provider:'email'}],user_metadata:{role:'admin',email:'admin@example.test'}}});
+   return send({id:'pending'});
+  }
+  if(path==='/auth/v1/token'&&url.searchParams.get('grant_type')==='password'){
+   const member=members.get(data.email);if(!member||member.password!==data.password)return send({code:'invalid_credentials'},400);
+   if(!member.user.email_confirmed_at)return send({code:'email_not_confirmed'},400);
+   const access='password-'+data.email;accessUsers.set(access,member.user);return send({access_token:access});
+  }
   if(path==='/auth/v1/token'){
    const grant=authCodes.get(data.auth_code);authCodes.delete(data.auth_code);
    if(!grant||grant.verifier!==data.code_verifier)return send({},400);
@@ -29,5 +38,5 @@ export async function mockSupabase(){
   if(req.method==='POST'){const list=Array.isArray(data)?data:[data];rows.push(...list);return send(list);}
   send({},400);
  }catch(e){console.error(e);res.writeHead(500).end();}});
- await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));return {url:'http://127.0.0.1:'+server.address().port,issueCode:(code,verifier,user)=>authCodes.set(code,{verifier,user}),close:()=>new Promise(resolve=>server.close(resolve))};
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));return {url:'http://127.0.0.1:'+server.address().port,issueCode:(code,verifier,user)=>authCodes.set(code,{verifier,user}),confirmEmail:(email,verifier)=>{const member=members.get(email);member.user.email_confirmed_at=new Date().toISOString();authCodes.set('confirm-'+email,{verifier,user:member.user});},close:()=>new Promise(resolve=>server.close(resolve))};
 }

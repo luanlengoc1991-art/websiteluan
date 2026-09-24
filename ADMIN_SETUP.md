@@ -64,3 +64,14 @@ Single admin; no staff roles, delete/archive workflow, automated emails, or real
 
 The browser receives neither Supabase secret keys nor OAuth access/refresh tokens. A successful PKCE exchange is checked with Supabase's user endpoint and converted to the existing seven-day opaque admin session. Each admin request rechecks the configured email, so changing that email revokes previous access. Logout revokes the Alpha HUB session; it does not sign out of the user's Google account.
 Password login is disabled unless `ALPHA_ENABLE_PASSWORD_LOGIN=true` is explicitly set with the legacy hash. The local backend fixture enables this only to retain existing regression tests. OAuth tests cover the success callback, denied email/unverified/non-Google accounts, PKCE challenge, replay rejection and unsafe redirects. These are simulated provider tests; a real Google sign-in still requires provider configuration and the user's account interaction.
+
+## Tài khoản thành viên
+
+- `/dang-ky`: đăng ký email/mật khẩu (tối thiểu 8 ký tự) hoặc Google; `/dang-nhap`: đăng nhập; `/tai-khoan`: xem email, quyền truy cập và đăng xuất.
+- Bật Email và Google trong Supabase Auth; cho phép đăng ký mới. Giữ xác nhận email. Cấu hình Custom SMTP để gửi thư xác nhận cho người dùng công khai; dịch vụ email mặc định Supabase có giới hạn người nhận và tần suất.
+- Redirect URL xác nhận/Google: `https://websiteluan.vercel.app/auth/callback`. Xác nhận email sử dụng PKCE; mở thư trên cùng trình duyệt trong 1 giờ. Nếu đã xác nhận nhưng cookie hết hạn, đăng nhập lại bằng mật khẩu.
+- Tài khoản mới luôn là thành viên. Chỉ phiên Google có email khớp `ALPHA_ADMIN_EMAIL` được truy cập quản trị. Email/mật khẩu không cấp quyền admin, kể cả email trùng cấu hình admin.
+- Các API quản trị tiếp tục dùng `getCurrentUser()` (admin-only). `getSignedInUser()` chỉ dùng cho trang tài khoản và trạng thái thành viên. Không thay kiểm tra quản trị bằng kiểm tra đã đăng nhập.
+- Cookie phiên HttpOnly chứa mã ngẫu nhiên; chỉ lưu hash trong `alpha_sessions`, owner là UUID Supabase cho thành viên và `admin` cho quản trị. Đăng xuất thu hồi phiên hiện tại; hạn phiên 7 ngày.
+- Đăng nhập mật khẩu quản trị cũ, nếu được bật rõ ràng bằng `ALPHA_ENABLE_PASSWORD_LOGIN=true`, dùng `/api/auth/admin-password`; mặc định bị tắt. `/api/auth/login` dành cho Supabase email/password.
+- `npm test` kiểm thử đăng ký, xác nhận, đăng nhập, đăng xuất và cách ly quyền thành viên bằng dữ liệu giả lập, không gửi thư hay tạo người dùng thật.

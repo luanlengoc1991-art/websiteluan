@@ -29,9 +29,9 @@ try{
  const flow=JSON.parse(decodeURIComponent(flowCookie.slice(flowCookie.indexOf('=')+1)));
  assert.equal(oauthLocation.searchParams.get('code_challenge'),createHash('sha256').update(flow.verifier).digest('base64url'));
  const callback=(code,authCookie=flowCookie)=>fetch(origin+'/auth/callback?code='+code,{redirect:'manual',headers:{Cookie:authCookie}});
- const adminUser={email:'admin@example.test',email_confirmed_at:new Date().toISOString(),identities:[{provider:'google'}]};
+ const adminUser={id:'admin-auth-id',email:'admin@example.test',email_confirmed_at:new Date().toISOString(),identities:[{provider:'google'}]};
  mock.issueCode('wrong-email',flow.verifier,{...adminUser,email:'stranger@example.test',user_metadata:{email:'admin@example.test'}});
- const denied=await callback('wrong-email');assert.match(denied.headers.get('location'),/google_forbidden/);assert(!denied.headers.get('set-cookie').includes('alpha_session='));
+ const memberGoogle=await callback('wrong-email');assert.equal(memberGoogle.headers.get('location'),origin+'/tai-khoan');const memberGoogleCookie=memberGoogle.headers.getSetCookie().find(c=>c.startsWith('alpha_session=')).split(';')[0];assert.equal((await(await fetch(origin+'/api/state',{headers:{Cookie:memberGoogleCookie}})).json()).user,null);
  mock.issueCode('unverified',flow.verifier,{...adminUser,email_confirmed_at:null});assert.match((await callback('unverified')).headers.get('location'),/google_forbidden/);
  mock.issueCode('not-google',flow.verifier,{...adminUser,identities:[{provider:'email'}]});assert.match((await callback('not-google')).headers.get('location'),/google_forbidden/);
  assert.match((await callback('missing-cookie','')).headers.get('location'),/google_cancelled/);
@@ -42,12 +42,33 @@ try{
  assert.match((await callback('success')).headers.get('location'),/google_failed/);
  const unsafeStart=await post('/api/auth/google?return_to='+encodeURIComponent('//evil.test'),{});
  const unsafeCookie=unsafeStart.headers.getSetCookie().find(c=>c.startsWith('alpha_google_pkce=')).split(';')[0];
- const unsafeFlow=JSON.parse(decodeURIComponent(unsafeCookie.slice(unsafeCookie.indexOf('=')+1)));assert.equal(unsafeFlow.destination,'/admin');
+ const unsafeFlow=JSON.parse(decodeURIComponent(unsafeCookie.slice(unsafeCookie.indexOf('=')+1)));assert.equal(unsafeFlow.destination,'/tai-khoan');
  const anonymous=await fetch(origin+'/api/state',{headers:{'oai-authenticated-user-id':'fake','oai-authenticated-user-email':'fake@example.test'}});assert.equal((await anonymous.json()).user,null);
  assert.equal((await post('/api/action',{action:'save'})).status,401);
- assert.equal((await post('/api/auth/login',{email:'admin@example.test',password:'incorrect'})).status,401);
- assert.equal((await post('/api/auth/login',{email:'admin@example.test',password},{Origin:'https://other.test'})).status,403);
- const login=await post('/api/auth/login',{email:'admin@example.test',password});assert.equal(login.status,200);const setCookie=login.headers.get('set-cookie');assert.match(setCookie,/HttpOnly/i);cookie=setCookie.split(';')[0];
+ assert.equal((await post('/api/auth/admin-password',{email:'admin@example.test',password:'incorrect'})).status,401);
+ assert.equal((await post('/api/auth/admin-password',{email:'admin@example.test',password},{Origin:'https://other.test'})).status,403);
+ const login=await post('/api/auth/admin-password',{email:'admin@example.test',password});assert.equal(login.status,200);const setCookie=login.headers.get('set-cookie');assert.match(setCookie,/HttpOnly/i);cookie=setCookie.split(';')[0];
+
+ // Public signup, verification and password login; user metadata cannot grant admin.
+ const adminCookie=cookie;cookie='';
+ assert.equal((await post('/api/auth/signup',{email:'member@example.test',password:'short',name:'Member'})).status,400);
+ assert.equal((await post('/api/auth/signup',{email:'member@example.test',password:'long-password',name:'Member'},{Origin:'https://other.test'})).status,403);
+ const signup=await post('/api/auth/signup',{email:'member@example.test',password:'long-password',name:'Member'});assert.equal(signup.status,200);assert.match((await signup.json()).message,/xác nhận/);
+ assert.equal((await post('/api/auth/login',{email:'member@example.test',password:'long-password'})).status,401);
+ const signupCookie=signup.headers.getSetCookie().find(c=>c.startsWith('alpha_google_pkce=')).split(';')[0];
+ const signupFlow=JSON.parse(decodeURIComponent(signupCookie.slice(signupCookie.indexOf('=')+1)));
+ mock.confirmEmail('member@example.test',signupFlow.verifier);
+ const confirmation=await callback('confirm-member@example.test',signupCookie);assert.equal(confirmation.headers.get('location'),origin+'/tai-khoan');
+ assert.equal((await post('/api/auth/login',{email:'member@example.test',password:'incorrect'})).status,400);
+ const memberLogin=await post('/api/auth/login',{email:'member@example.test',password:'long-password'});assert.equal(memberLogin.status,200);
+ cookie=memberLogin.headers.getSetCookie().find(c=>c.startsWith('alpha_session=')).split(';')[0];
+ const memberState=await(await fetch(origin+'/api/state',{headers:{Cookie:cookie}})).json();assert.equal(memberState.user,null);assert.equal(memberState.member.email,'member@example.test');
+ assert.match(await(await fetch(origin+'/tai-khoan',{headers:{Cookie:cookie}})).text(),/member@example.test/);
+ assert.equal((await post('/api/action',{action:'save',kind:'customer',id:'unauthorized',data:{}})).status,401);
+ assert.equal((await post('/api/upload',{})).status,401);
+ const memberAdminPage=await fetch(origin+'/admin',{headers:{Cookie:cookie},redirect:'manual'});assert([200,307].includes(memberAdminPage.status));assert(!(await memberAdminPage.text()).includes('admin-sidebar'));
+ const memberLogout=await post('/api/auth/logout',{});assert.equal(memberLogout.status,303);assert.equal((await(await fetch(origin+'/api/state',{headers:{Cookie:cookie}})).json()).member,null);
+ cookie=adminCookie;
  const customer={id:'test-customer',name:'Khách kiểm thử',phone:'0900000000',email:'',note:'',stage:'Mới'};
  assert.equal((await post('/api/action',{action:'save',kind:'customer',id:customer.id,data:customer})).status,200);
  const holds=await Promise.all([post('/api/action',{action:'reserve',unitId:'u-2-0',customerId:customer.id}),post('/api/action',{action:'reserve',unitId:'u-2-0',customerId:customer.id})]);assert.deepEqual(holds.map(r=>r.status).sort(),[200,409]);
@@ -68,5 +89,5 @@ try{
  state=await(await fetch(origin+'/api/state',{headers:{Cookie:cookie}})).json();assert.equal(state.records.find(r=>r.id===customer.id).data.name,customer.name);assert.equal(state.files[0].id,fileId);
  const logout=await fetch(origin+'/api/auth/logout',{method:'POST',headers:{Cookie:cookie,Origin:origin},redirect:'manual'});assert.equal(logout.status,303);
  assert.equal((await(await fetch(origin+'/api/state',{headers:{Cookie:cookie}})).json()).user,null);
- console.log('PASS (disposable Supabase HTTP fixture; not a live cloud test): Google PKCE callback, email allowlist, rejected unverified/non-Google identities, one-time code, redirect safety, Next.js pages, optional password login, HttpOnly session, rejected spoofed identity, CSRF, customer persistence, atomic holds, extension/cancellation, protected upload/download, persistence after restart, logout revocation.');
+ console.log('PASS (disposable Supabase HTTP fixture; not a live cloud test): member signup/verification/password login, member admin isolation, Google PKCE callback, admin email allowlist, rejected unverified/non-Google identities, one-time code, redirect safety, Next.js pages, optional password login, HttpOnly session, rejected spoofed identity, CSRF, customer persistence, atomic holds, extension/cancellation, protected upload/download, persistence after restart, logout revocation.');
 }catch(error){console.error(error);process.exitCode=1;}finally{await stop();await mock.close();rmSync(dir,{recursive:true,force:true});}
