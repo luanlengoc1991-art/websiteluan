@@ -5,7 +5,7 @@ import {spawn} from 'node:child_process';
 import {mkdtempSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {randomBytes,scryptSync} from 'node:crypto';
+import {randomBytes,scryptSync,createHash} from 'node:crypto';
 import {createServer} from 'node:net';
 import {createRequire} from 'node:module';
 const require=createRequire(import.meta.url);
@@ -13,12 +13,36 @@ const dir=mkdtempSync(join(tmpdir(),'alpha-hub-test-'));
 const password=randomBytes(20).toString('hex'),salt=randomBytes(16).toString('hex');
 const probe=createServer();await new Promise(resolve=>probe.listen(0,'127.0.0.1',resolve));const port=probe.address().port;await new Promise(resolve=>probe.close(resolve));
 const origin=`http://127.0.0.1:${port}`;let server,logs='',cookie='';
-const env={...process.env,NODE_ENV:'production',NEXT_TELEMETRY_DISABLED:'1',SUPABASE_URL:mock.url,SUPABASE_SECRET_KEY:'test-only-key',ALPHA_PUBLIC_ORIGIN:origin,ALPHA_DATA_DIR:dir,ALPHA_ADMIN_EMAIL:'admin@example.test',ALPHA_ADMIN_PASSWORD_HASH:`scrypt:${salt}:${scryptSync(password,salt,64).toString('hex')}`,ALPHA_SECURE_COOKIE:'false'};
+const env={...process.env,NODE_ENV:'production',ALPHA_ENABLE_PASSWORD_LOGIN:'true',NEXT_TELEMETRY_DISABLED:'1',SUPABASE_URL:mock.url,SUPABASE_SECRET_KEY:'test-only-key',ALPHA_PUBLIC_ORIGIN:origin,ALPHA_DATA_DIR:dir,ALPHA_ADMIN_EMAIL:'admin@example.test',ALPHA_ADMIN_PASSWORD_HASH:`scrypt:${salt}:${scryptSync(password,salt,64).toString('hex')}`,ALPHA_SECURE_COOKIE:'false'};
 async function start(){server=spawn(process.execPath,[require.resolve('next/dist/bin/next'),'start','-H','127.0.0.1','-p',String(port)],{env,stdio:['ignore','pipe','pipe']});server.stdout.on('data',b=>logs+=b);server.stderr.on('data',b=>logs+=b);for(let i=0;i<150;i++){if(server.exitCode!==null)throw Error(logs);try{const r=await fetch(origin+'/api/state');if(r.status===200)return;}catch{}await new Promise(r=>setTimeout(r,200));}throw Error('Server did not start: '+logs);}
 async function stop(){if(server&&server.exitCode===null){server.kill();await new Promise(r=>server.once('exit',r));}}
 async function post(path,data,extra={}){return fetch(origin+path,{method:'POST',redirect:'manual',headers:{Origin:origin,'Content-Type':'application/json',...(cookie?{Cookie:cookie}:{}),...extra},body:JSON.stringify(data)});}
 try{
  await start();
+ assert.equal((await post('/api/auth/google',{}, {Origin:'https://other.test'})).status,403);
+ const googleStart=await post('/api/auth/google?return_to=%2Fadmin%2Fkhach-hang',{});
+ assert.equal(googleStart.status,303);
+ const oauthLocation=new URL(googleStart.headers.get('location'));
+ assert.equal(oauthLocation.searchParams.get('provider'),'google');
+ assert.equal(oauthLocation.searchParams.get('redirect_to'),origin+'/auth/callback');
+ const flowCookie=googleStart.headers.getSetCookie().find(c=>c.startsWith('alpha_google_pkce=')).split(';')[0];
+ const flow=JSON.parse(decodeURIComponent(flowCookie.slice(flowCookie.indexOf('=')+1)));
+ assert.equal(oauthLocation.searchParams.get('code_challenge'),createHash('sha256').update(flow.verifier).digest('base64url'));
+ const callback=(code,authCookie=flowCookie)=>fetch(origin+'/auth/callback?code='+code,{redirect:'manual',headers:{Cookie:authCookie}});
+ const adminUser={email:'admin@example.test',email_confirmed_at:new Date().toISOString(),identities:[{provider:'google'}]};
+ mock.issueCode('wrong-email',flow.verifier,{...adminUser,email:'stranger@example.test',user_metadata:{email:'admin@example.test'}});
+ const denied=await callback('wrong-email');assert.match(denied.headers.get('location'),/google_forbidden/);assert(!denied.headers.get('set-cookie').includes('alpha_session='));
+ mock.issueCode('unverified',flow.verifier,{...adminUser,email_confirmed_at:null});assert.match((await callback('unverified')).headers.get('location'),/google_forbidden/);
+ mock.issueCode('not-google',flow.verifier,{...adminUser,identities:[{provider:'email'}]});assert.match((await callback('not-google')).headers.get('location'),/google_forbidden/);
+ assert.match((await callback('missing-cookie','')).headers.get('location'),/google_cancelled/);
+ mock.issueCode('success',flow.verifier,adminUser);
+ const googleLogin=await callback('success');assert.equal(googleLogin.headers.get('location'),origin+'/admin/khach-hang');
+ const googleSession=googleLogin.headers.getSetCookie().find(c=>c.startsWith('alpha_session='));assert.match(googleSession,/HttpOnly/);
+ const googleState=await(await fetch(origin+'/api/state',{headers:{Cookie:googleSession.split(';')[0]}})).json();assert.equal(googleState.user.email,adminUser.email);
+ assert.match((await callback('success')).headers.get('location'),/google_failed/);
+ const unsafeStart=await post('/api/auth/google?return_to='+encodeURIComponent('//evil.test'),{});
+ const unsafeCookie=unsafeStart.headers.getSetCookie().find(c=>c.startsWith('alpha_google_pkce=')).split(';')[0];
+ const unsafeFlow=JSON.parse(decodeURIComponent(unsafeCookie.slice(unsafeCookie.indexOf('=')+1)));assert.equal(unsafeFlow.destination,'/admin');
  const anonymous=await fetch(origin+'/api/state',{headers:{'oai-authenticated-user-id':'fake','oai-authenticated-user-email':'fake@example.test'}});assert.equal((await anonymous.json()).user,null);
  assert.equal((await post('/api/action',{action:'save'})).status,401);
  assert.equal((await post('/api/auth/login',{email:'admin@example.test',password:'incorrect'})).status,401);
@@ -44,5 +68,5 @@ try{
  state=await(await fetch(origin+'/api/state',{headers:{Cookie:cookie}})).json();assert.equal(state.records.find(r=>r.id===customer.id).data.name,customer.name);assert.equal(state.files[0].id,fileId);
  const logout=await fetch(origin+'/api/auth/logout',{method:'POST',headers:{Cookie:cookie,Origin:origin},redirect:'manual'});assert.equal(logout.status,303);
  assert.equal((await(await fetch(origin+'/api/state',{headers:{Cookie:cookie}})).json()).user,null);
- console.log('PASS (disposable Supabase HTTP fixture; not a live cloud test): Next.js pages, password login, HttpOnly session, rejected spoofed identity, CSRF, customer persistence, atomic holds, extension/cancellation, protected upload/download, persistence after restart, logout revocation.');
+ console.log('PASS (disposable Supabase HTTP fixture; not a live cloud test): Google PKCE callback, email allowlist, rejected unverified/non-Google identities, one-time code, redirect safety, Next.js pages, optional password login, HttpOnly session, rejected spoofed identity, CSRF, customer persistence, atomic holds, extension/cancellation, protected upload/download, persistence after restart, logout revocation.');
 }catch(error){console.error(error);process.exitCode=1;}finally{await stop();await mock.close();rmSync(dir,{recursive:true,force:true});}

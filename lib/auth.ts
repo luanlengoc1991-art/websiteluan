@@ -10,7 +10,7 @@ export async function getCurrentUser(){
  const token=(await cookies()).get(sessionCookie)?.value;
  if(!token||!/^[a-f0-9]{64}$/.test(token))return null;
  const row=(await rest('alpha_sessions?token_hash='+eq(tokenHash(token))+'&expires=gt.'+Date.now()+'&select=owner,email'))[0];
- if(!row)return null;
+ if(!row||String(row.email).toLowerCase()!==(process.env.ALPHA_ADMIN_EMAIL||'').trim().toLowerCase())return null;
  return {userId:String(row.owner),email:String(row.email),displayName:String(row.email),fullName:null};
 }
 export async function verifyPassword(password:string){

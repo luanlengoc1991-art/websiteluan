@@ -4,6 +4,7 @@ import {verifyPassword,newSession,sessionCookie,sessionLifetime,cookieOptions} f
 import {rest,eq} from '@/lib/supabase-server';
 export const runtime='nodejs';
 export async function POST(req:Request){try{
+ if(process.env.ALPHA_ENABLE_PASSWORD_LOGIN!=='true')return NextResponse.json({error:'Vui lòng đăng nhập bằng Google.'},{status:410});
  if(!isSameOrigin(req))return NextResponse.json({error:'Yêu cầu không hợp lệ.'},{status:403});
  if(Number(req.headers.get('content-length')||0)>4096)return NextResponse.json({error:'Yêu cầu quá lớn.'},{status:413});
  const admin=(process.env.ALPHA_ADMIN_EMAIL||'').trim().toLowerCase();
