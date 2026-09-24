@@ -1,6 +1,8 @@
 'use client';
 import {useEffect, useState} from 'react';
 const messages: Record<string,string> = {
+ admin_unconfigured:'Máy chủ chưa cấu hình email quản trị. Vui lòng liên hệ quản trị viên.',
+ google_disabled:'Đăng nhập Google chưa được bật trong hệ thống.',
  google_unavailable:'Đăng nhập Google chưa được cấu hình đầy đủ. Vui lòng liên hệ quản trị viên.',
  google_cancelled:'Đăng nhập chưa hoàn tất. Bạn có thể thử lại bằng Google.',
  google_expired:'Phiên đăng nhập đã hết hạn. Vui lòng thử lại.',

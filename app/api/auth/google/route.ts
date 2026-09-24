@@ -7,11 +7,11 @@ export const runtime = 'nodejs';
 export async function POST(request: Request) {
   if (!isSameOrigin(request)) return NextResponse.json({error:'Yêu cầu không hợp lệ.'}, {status:403});
   const origin = new URL(process.env.ALPHA_PUBLIC_ORIGIN || request.url).origin;
-  const fail = () => NextResponse.redirect(new URL('/dang-nhap?error=google_unavailable', origin), 303);
+  const fail = (error='google_unavailable') => NextResponse.redirect(new URL('/dang-nhap?error='+error, origin), 303);
   try {
-    if (!adminEmail()) return fail();
+    if (!adminEmail()) return fail('admin_unconfigured');
     const settings = await (await authRequest('settings')).json();
-    if (!settings.external?.google) return fail();
+    if (!settings.external?.google) return fail('google_disabled');
     const {url} = supabaseConfig();
     const {verifier, challenge} = createChallenge();
     const destination = safeReturnTo(new URL(request.url).searchParams.get('return_to'));
