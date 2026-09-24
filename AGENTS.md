@@ -8,6 +8,17 @@
 - Auth uses single-admin, hashed opaque sessions in Supabase. Records use Supabase Postgres and files use the private alpha-assets Storage bucket. Secret keys are server-only. Keep RLS enabled and browser roles denied direct access. npm test uses a disposable HTTP fixture, not a live Supabase project.
 - GitHub source and the old chatgpt.site deployment are separate. Do not claim automatic synchronization.
 
+## Quy trình đã được chủ dự án xác nhận
+
+- Kho mã nguồn chính: `luanlengoc1991-art/websiteluan`; nhánh phát hành: `main`. GitHub là nguồn chuẩn để tiếp tục công việc trên mọi thiết bị.
+- Trước khi sửa, lấy phiên bản mới nhất từ GitHub (clone hoặc fetch/pull), đọc file này và bảo toàn thay đổi đang có.
+- Với công việc chủ dự án yêu cầu, thực hiện đầy đủ, kiểm tra phù hợp, commit và push trực tiếp lên `main`. Chủ dự án đã cho phép quy trình cập nhật và xuất bản này; không hỏi lại xác nhận cho các bước thông thường.
+- Vercel triển khai website `https://websiteluan.vercel.app` từ GitHub `main`. Sau khi push, kiểm tra commit trên GitHub và trạng thái triển khai Vercel; chỉ báo đã xuất bản khi có bằng chứng deployment tương ứng thành công.
+- Báo ngắn gọn bằng tiếng Việt: nội dung cập nhật, mã commit, trạng thái website và phần nào chưa kiểm chứng hoặc bị chặn.
+- Khi đổi thiết bị: clone/pull trước khi sửa; commit và push sau khi sửa để các thiết bị và Vercel dùng cùng nguồn.
+- GitHub lưu mã nguồn. Supabase lưu dữ liệu ứng dụng và Storage; không đưa dữ liệu khách hàng, file tải lên hay thông tin bí mật vào GitHub.
+- Quy trình này áp dụng cho các tác vụ đã được yêu cầu; vẫn tuân thủ các yêu cầu quyền truy cập bắt buộc và không tự ý thực hiện thao tác phá hủy ngoài phạm vi công việc.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
