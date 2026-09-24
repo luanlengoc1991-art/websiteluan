@@ -5,7 +5,7 @@
 - Run npm run typecheck and npm run build after meaningful changes; npm test verifies the backend against disposable data.
 - Never commit .env.local, admin passwords, session tokens, data/, uploads, or customer records.
 - Preserve same-origin native links and per-project routes. Do not restore the ChatGPT Sites auth headers or cloudflare:workers imports.
-- Auth/storage are single-admin sessions + persistent SQLite/filesystem. Do not describe this backend as Vercel-compatible without migrating storage.
+- Auth uses single-admin, hashed opaque sessions in Supabase. Records use Supabase Postgres and files use the private alpha-assets Storage bucket. Secret keys are server-only. Keep RLS enabled and browser roles denied direct access. npm test uses a disposable HTTP fixture, not a live Supabase project.
 - GitHub source and the old chatgpt.site deployment are separate. Do not claim automatic synchronization.
 
 <!-- BEGIN:nextjs-agent-rules -->

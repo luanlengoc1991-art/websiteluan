@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./admin.css";
 
 export const metadata: Metadata = {
   title: "Alpha Hub | Quỹ căn & Dự án",
@@ -21,3 +22,4 @@ export default function RootLayout({
     </html>
   );
 }
+

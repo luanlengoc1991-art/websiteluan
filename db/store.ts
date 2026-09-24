@@ -1,35 +1,42 @@
-import {DatabaseSync, type SQLInputValue} from 'node:sqlite';
-import {mkdirSync,readFileSync,writeFileSync,existsSync,unlinkSync} from 'node:fs';
-import {resolve,join,dirname,sep} from 'node:path';
-
-export function dataDirectory(){return resolve(process.env.ALPHA_DATA_DIR||'./data');}
-const globalDb=globalThis as typeof globalThis & {alphaDb?:DatabaseSync;alphaDbPath?:string};
-export function sqlite(){
- const path=join(dataDirectory(),'alpha-hub.sqlite');
- if(globalDb.alphaDb&&globalDb.alphaDbPath===path)return globalDb.alphaDb;
- mkdirSync(dirname(path),{recursive:true});const db=new DatabaseSync(path);
- db.exec(`PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;
- CREATE TABLE IF NOT EXISTS records(owner TEXT NOT NULL,kind TEXT NOT NULL,id TEXT NOT NULL,payload TEXT NOT NULL,updated INTEGER NOT NULL,PRIMARY KEY(owner,kind,id));
- CREATE TABLE IF NOT EXISTS reservations(id TEXT PRIMARY KEY,owner TEXT NOT NULL,unit_id TEXT NOT NULL,customer_id TEXT NOT NULL,note TEXT NOT NULL,status TEXT NOT NULL,expires_at INTEGER NOT NULL,created_at INTEGER NOT NULL);
- CREATE INDEX IF NOT EXISTS idx_reservations_owner_unit ON reservations(owner,unit_id,status);
- CREATE TABLE IF NOT EXISTS files(id TEXT PRIMARY KEY,owner TEXT NOT NULL,project_id TEXT NOT NULL,kind TEXT NOT NULL,name TEXT NOT NULL,mime TEXT NOT NULL,object_key TEXT NOT NULL);
- CREATE INDEX IF NOT EXISTS idx_files_owner ON files(owner);
- CREATE TABLE IF NOT EXISTS sessions(token_hash TEXT PRIMARY KEY,owner TEXT NOT NULL,email TEXT NOT NULL,expires INTEGER NOT NULL);
- CREATE TABLE IF NOT EXISTS login_limits(id TEXT PRIMARY KEY,attempts INTEGER NOT NULL,reset_at INTEGER NOT NULL);`);
- globalDb.alphaDb=db;globalDb.alphaDbPath=path;return db;
+import {rest,eq,supabaseFetch,readAll} from '@/lib/supabase-server';
+type Value=string|number|null;
+class Statement {
+ constructor(readonly sql:string,readonly values:Value[]=[] ){}
+ bind(...values:Value[]){return new Statement(this.sql,values);}
+ async all<T=Record<string,unknown>>(){return {results:await this.read() as T[]};}
+ async first<T=Record<string,unknown>>(){return (await this.read())[0] as T||null;}
+ private async read(){
+  const s=this.sql,v=this.values;
+  if(s.includes('FROM records')) {
+   const kind=s.match(/kind='([^']+)'/)?.[1];
+   const id=s.includes('id=?')?v[1]:s.includes("id='main'")?'main':null;
+   return readAll('alpha_records?owner='+eq(v[0])+(kind?'&kind='+eq(kind):'')+(id!==null?'&id='+eq(id):'')+'&select=kind,id,payload&order=updated.desc,id.asc');
+  }
+  if(s.includes('FROM reservations')) {
+   return rest('alpha_reservations?owner='+eq(v[0])+(s.includes('unit_id=?')?'&unit_id='+eq(v[1])+'&status='+eq('Đang giữ chỗ')+'&expires_at=gt.'+v[2]:'')+'&order=created_at.desc&limit=500');
+  }
+  if(s.includes('FROM files')){
+   const single=s.includes('id=? AND owner=?');
+   const rows=await readAll('alpha_files?'+(single?'id='+eq(v[0])+'&owner='+eq(v[1]):'owner='+eq(v[0]))+'&order=id.asc');
+   return rows.map((r:Record<string,unknown>)=>({...r,projectId:r.project_id}));
+  }
+  throw Error('Unsupported database read');
+ }
+ record(){const [owner,kind,id,payload,updated]=this.values;return {owner,kind,id,payload,updated};}
+ async run(){
+  const s=this.sql,v=this.values;let rows;
+  if(s.startsWith('INSERT INTO records')){await rest('rpc/alpha_save_records','POST',{p_rows:[this.record()]});rows=[this.record()];}
+  else if(s.startsWith('INSERT INTO files')){const [id,owner,project_id,kind,name,mime,object_key]=v;rows=await rest('alpha_files','POST',{id,owner,project_id,kind,name,mime,object_key});}
+  else if(s.startsWith('INSERT INTO reservations'))return {success:true,meta:{changes:await rest('rpc/alpha_reserve','POST',{p_id:v[0],p_owner:v[1],p_unit:v[2],p_customer:v[3],p_note:v[4],p_expires:v[5],p_now:v[6]})}};
+  else if(s.startsWith('UPDATE reservations'))return {success:true,meta:{changes:await rest('rpc/alpha_reservation','POST',{p_id:v[3],p_owner:v[4],p_operation:v[1],p_now:v[5]})}};
+  else throw Error('Unsupported database write');
+  return {success:true,meta:{changes:rows?.length||0}};
+ }
 }
-class Statement{
- constructor(private sql:string,private values:SQLInputValue[]=[] ){}
- bind(...values:SQLInputValue[]){return new Statement(this.sql,values);}
- async all<T=Record<string,unknown>>(){return {results:sqlite().prepare(this.sql).all(...this.values) as T[]};}
- async first<T=Record<string,unknown>>(){return (sqlite().prepare(this.sql).get(...this.values)||null) as T|null;}
- execute(){const r=sqlite().prepare(this.sql).run(...this.values);return {success:true,meta:{changes:Number(r.changes)}};}
- async run(){return this.execute();}
-}
-export function database(){return {prepare:(sql:string)=>new Statement(sql),async batch(statements:Statement[]){const db=sqlite();db.exec('BEGIN IMMEDIATE');try{const out=statements.map(s=>s.execute());db.exec('COMMIT');return out;}catch(error){db.exec('ROLLBACK');throw error;}}};}
-function objectPath(key:string){const root=join(dataDirectory(),'uploads');const target=resolve(root,key);if(!target.startsWith(root+sep))throw Error('Invalid file path');return target;}
+export function database(){return {prepare:(sql:string)=>new Statement(sql),async batch(statements:Statement[]){if(statements.some(s=>!s.sql.startsWith('INSERT INTO records')))throw Error('Unsupported batch');await rest('rpc/alpha_save_records','POST',{p_rows:statements.map(s=>s.record())});return statements.map(()=>({success:true}));}};}
+const objectPath=(key:string)=>'/storage/v1/object/alpha-assets/'+key.split('/').map(encodeURIComponent).join('/');
 export function bucket(){return {
- async put(key:string,data:ArrayBuffer,_options?:unknown){const path=objectPath(key);mkdirSync(dirname(path),{recursive:true});writeFileSync(path,Buffer.from(data));},
- async get(key:string){const path=objectPath(key);return existsSync(path)?{body:new Uint8Array(readFileSync(path))}:null;},
- async delete(key:string){const path=objectPath(key);if(existsSync(path))unlinkSync(path);}
+ async put(key:string,data:ArrayBuffer,options?:{httpMetadata?:{contentType?:string}}){await supabaseFetch(objectPath(key),{method:'POST',headers:{'Content-Type':options?.httpMetadata?.contentType||'application/octet-stream','x-upsert':'false'},body:data});},
+ async get(key:string){const r=await supabaseFetch(objectPath(key));return {body:new Uint8Array(await r.arrayBuffer())};},
+ async delete(key:string){await supabaseFetch(objectPath(key),{method:'DELETE'});}
 };}

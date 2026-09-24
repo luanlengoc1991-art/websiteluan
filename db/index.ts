@@ -1,1 +1,1 @@
-export {database as getDb,sqlite} from './store';
+export {database,bucket} from './store';
