@@ -280,3 +280,38 @@
 
 /* Public member registration and account */
 .member-auth{text-align:left;margin-top:24px}.auth-tabs{display:grid;grid-template-columns:1fr 1fr;background:#eef5f0;padding:5px;border-radius:12px;margin-bottom:24px}.auth-tabs a{text-align:center;padding:11px;border-radius:9px;font-weight:600;color:#55715f}.auth-tabs a[aria-current=page]{background:#fff;color:#14653c;box-shadow:0 2px 8px #123c2010}.google-button{width:100%;min-height:48px;display:flex;align-items:center;justify-content:center;gap:12px;background:white;color:#263d30;border:1px solid #d5e3d9}.auth-divider{display:flex;align-items:center;gap:12px;color:#728078;font-size:12px;margin:24px 0}.auth-divider:before,.auth-divider:after{content:'';height:1px;flex:1;background:#e0e9e3}.member-auth .field input{width:100%;min-height:46px;border:1px solid #ceded3;border-radius:9px;padding:11px 13px;background:#fff;color:#203b2b}.member-auth .field input:focus{outline:2px solid #218351;outline-offset:2px}.auth-password{position:relative}.auth-password input{padding-right:65px!important}.auth-password button{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:12px;color:#246c44;padding:6px}.auth-submit{width:100%;min-height:48px;margin-top:6px}.auth-notice{padding:12px 14px;border-radius:9px;font-size:13px;line-height:1.6}.auth-notice.error{color:#a52b25;background:#fff1ef}.auth-notice.success{color:#145e36;background:#edf9f0}.auth-switch{text-align:center;font-size:14px;margin:22px 0!important}.auth-switch a{color:#14653c;font-weight:700}.member-auth button:disabled{opacity:.6;cursor:wait}.member-badge{display:block;color:#247a4a;font-size:11px;letter-spacing:1.4px;font-weight:700;margin:20px 0 12px}.member-info{display:grid;text-align:left;padding:22px;background:#f1f7f3;border-radius:14px;gap:8px;margin:25px 0}.member-info span{font-size:12px;color:#5e7565}.member-info strong{overflow-wrap:anywhere;margin-bottom:12px;font-size:15px}.member-account .stack form button{width:100%}
+
+/* Project pages occupy the viewport by default, including short mobile screens. */
+.immersive-site{position:fixed;inset:0;width:100%;height:100vh;height:100dvh;overflow:hidden;isolation:isolate}
+.immersive-site .project-workspace{position:absolute;inset:0;width:100%;height:100%;min-height:0;max-width:none;margin:0;border-radius:0}
+.immersive-site .workspace-top-left{top:max(15px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left))}
+.immersive-site .workspace-bottom{bottom:max(12px,env(safe-area-inset-bottom))}
+.immersive-site .workspace-panel{min-height:0}
+.immersive-site .workspace-panel-body,.immersive-site .floating-unit-list{min-height:0;overscroll-behavior:contain}
+@media(max-height:600px) and (min-width:541px){
+ .immersive-site .workspace-brand{top:8px;right:12px}
+ .immersive-site .workspace-brand img{width:44px;height:44px}
+ .immersive-site .workspace-brand span{display:none}
+ .immersive-site .workspace-search-area{top:12px;width:45%;max-width:540px}
+ .immersive-site .workspace-search{height:40px}
+ .immersive-site .workspace-top-left .round-tool{width:36px;height:36px}
+ .immersive-site .workspace-back-label{display:none}
+ .immersive-site .scene-caption{top:70px;left:20px;max-width:calc(100% - 310px)}
+ .immersive-site .scene-caption h1{font-size:22px}
+ .immersive-site .scene-caption p{display:none}
+ .immersive-site .scene-message{top:53%;left:20px;width:calc(100% - 330px);max-height:calc(100% - 190px);min-width:0;padding:15px;overflow:auto;transform:translateY(-50%)}
+ .immersive-site .scene-message h2{font-size:18px}
+ .immersive-site .scene-message p{font-size:12px}
+ .immersive-site .floating-inventory{top:70px;bottom:100px;right:15px;width:270px}
+ .immersive-site .workspace-panel{top:70px;bottom:100px;left:12px;right:12px}
+ .immersive-site .workspace-panel-heading{padding:10px 16px}
+ .immersive-site .workspace-panel-heading h1{font-size:20px}
+ .immersive-site .workspace-panel-body{padding:16px}
+ .immersive-site .workspace-dock{min-height:58px!important}
+ .immersive-site .workspace-dock [data-slot=tabs-trigger]{min-height:52px;padding:5px 9px}
+ .immersive-site .workspace-side-tools{bottom:105px;left:12px}
+ .immersive-site .immersive-plan{inset:70px 300px 100px 60px}
+ .immersive-site .scene-picker{bottom:105px;left:60px;right:300px}
+ .immersive-site .reopen-list{top:70px}
+ .immersive-site .compare-bar{bottom:100px}
+}
