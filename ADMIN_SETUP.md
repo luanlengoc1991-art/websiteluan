@@ -84,3 +84,10 @@ Password login is disabled unless `ALPHA_ENABLE_PASSWORD_LOGIN=true` is explicit
 - Cột ảnh bên trái lấy file loại **Tiện ích** của đúng dự án; nếu chưa có thì dùng Thư viện / Nhà mẫu / Panorama của dự án.
 - Giá TTS, TTTĐ, giá vay, tổng giá trị, ngày chính sách và quà tặng lấy từ hồ sơ căn. Dữ liệu thiếu hiển thị “Chưa cập nhật”. Các căn mẫu vẫn là dữ liệu minh họa.
 - Phiếu giá tải CSV; tính lãi vay dùng giả định người dùng nhập và không phải báo giá ngân hàng. Giữ căn dùng luồng quản trị hiện có; chức năng không gửi đặt chỗ đến chủ đầu tư.
+
+## Bảng hàng tham khảo Masteri Grand Coast
+
+- `lib/masteri-account-snapshot.ts` chứa 12 căn đọc được từ bảng hàng VHub trong phiên tài khoản của chủ website ngày 27/09/2026, thay cho 650 căn mô phỏng. Đây là snapshot ban đầu, không phải API đồng bộ VHub.
+- Snapshot chỉ chứa thông tin sản phẩm hiển thị: mã, tòa, tầng, loại căn, diện tích, hướng, giá, phân khu, nhóm quỹ, trạng thái và nguồn/thời điểm. Không chứa thông tin tài khoản, khách hàng, cookie hoặc khóa truy cập.
+- Giá TTS/TTTĐ, diện tích sàn, layout và ảnh phiếu căn chưa đọc được nên không tự suy đoán. Giá/trạng thái phải được xác nhận lại trước giao dịch.
+- Kết nối quản trị Supabase hiện từ chối ghi (read-only transaction); snapshot chưa được nhập vào database. Admin vẫn có thể sửa từng căn bằng giao diện quản lý hiện có, các thay đổi được lưu qua backend Supabase và ưu tiên hơn snapshot cùng ID.

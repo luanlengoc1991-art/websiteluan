@@ -78,7 +78,7 @@ function DetailPicture({src,alt,className=''}:{src:string;alt:string;className?:
 function downloadUnit(unit:Unit,project:Project,status:string){
   const rows=[
     ['Mã căn',unit.code],['Dự án',project.name],['Tòa',unit.tower||'Tòa chính'],['Tầng',unit.floor],
-    ['Loại hình',unit.type],['Phân khu',unit.zone],['Diện tích',`${unit.area} m²`],['Diện tích sàn',`${unit.builtArea} m²`],
+    ['Loại hình',unit.type],['Phân khu',unit.zone],['Diện tích',`${unit.area} m²`],['Diện tích sàn',unit.builtArea>0?`${unit.builtArea} m²`:'Chưa cập nhật'],
     ['Phòng ngủ',unit.beds],['Hướng',unit.direction],['Nhóm quỹ',unit.group],['Giá tham khảo',`${unit.price} tỷ`],['Trạng thái',status],['Ghi chú',unit.note||''],
   ];
   const csv='\uFEFF'+rows.map(([label,value])=>`"${String(label).replaceAll('"','""')}";"${String(value??'').replaceAll('"','""')}"`).join('\r\n');
@@ -173,7 +173,7 @@ export default function UnitDetailSheet({immersive=false,open,unit,project,units
           <section className="unit-price-card"><div><span className="small muted">GIÁ THAM KHẢO</span><strong>{fmt(unit.price)} <small>tỷ đồng</small></strong><span className="small muted">Khoảng {fmt(pricePerM2)} triệu/m² · dữ liệu mẫu</span></div><BadgeCheck size={28}/></section>
           <div className="unit-detail-grid">{[
             ['Loại hình',unit.type],['Phân khu',unit.zone],['Tòa / tầng',`${unit.tower||'Tòa chính'} · ${unit.floor}`],['Phòng ngủ',unit.beds?`${unit.beds} phòng`:'Studio'],
-            ['Diện tích',`${fmt(unit.area)} m²`],['Diện tích sàn',`${fmt(unit.builtArea)} m²`],['Hướng',unit.direction],['Nhóm quỹ',unit.group],
+            ['Diện tích',`${fmt(unit.area)} m²`],['Diện tích sàn',unit.builtArea>0?`${fmt(unit.builtArea)} m²`:'Chưa cập nhật'],['Hướng',unit.direction],['Nhóm quỹ',unit.group],
           ].map(([label,value])=><div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
           <section className="unit-detail-section"><div className="unit-section-title"><div><span className="eyebrow brown">CHI TIẾT GIÁ & CHÍNH SÁCH</span><h3>Thông tin thương mại</h3></div><WalletCards size={17}/></div><div className="unit-commercial-grid"><div><span>Giá TTS</span><strong>{priceTts?`${fmt(priceTts)} tỷ`:'Đang cập nhật'}</strong></div><div><span>Giá TTTĐ</span><strong>{priceTttd?`${fmt(priceTttd)} tỷ`:'Đang cập nhật'}</strong></div><div><span>Giá vay</span><strong>{priceLoan?`${fmt(priceLoan)} tỷ`:'Đang cập nhật'}</strong></div><div><span>Tổng giá trị</span><strong>{totalPrice?`${fmt(totalPrice)} tỷ`:'Đang cập nhật'}</strong></div></div>{(unit.gift||unit.policyDate)&&<p className="small muted">{unit.gift&&<>Quà tặng: {unit.gift}</>}{unit.gift&&unit.policyDate&&' · '}{unit.policyDate&&<>Cập nhật chính sách: {unit.policyDate}</>}</p>}</section>
           <section className="unit-detail-section"><div className="unit-section-title"><div><span className="eyebrow brown">TỔNG GIÁ TRỊ THAM KHẢO</span><h3>Ước tính để tư vấn</h3></div><Info size={17}/></div><div className="unit-breakdown"><div><span>Giá sản phẩm</span><strong>{fmt(unit.price)} tỷ</strong></div><div><span>VAT ước tính</span><strong>{fmt(estimateVat)} tỷ</strong></div><div><span>Phí khác ước tính</span><strong>{fmt(estimateFees)} tỷ</strong></div><div className="total"><span>Tổng dự kiến</span><strong>{fmt(unit.price+estimateVat+estimateFees)} tỷ</strong></div></div><p className="small muted">Các khoản trên chỉ là phép tính minh họa để trao đổi nội bộ, không phải bảng giá hoặc nghĩa vụ thanh toán chính thức.</p></section>
