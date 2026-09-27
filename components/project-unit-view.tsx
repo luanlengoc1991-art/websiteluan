@@ -17,7 +17,8 @@ function Picture({src,alt,className=''}:{src:string;alt:string;className?:string
 export default function ProjectUnitView({open,unit,project,assets,units,status,phone,favorite,onClose,onFavorite,onReserve,onSelect}:ProjectUnitViewProps){
  const [railOpen,setRailOpen]=useState(true),[image,setImage]=useState<Asset|null>(null),[zoom,setZoom]=useState(1),[tool,setTool]=useState<'loan'|'price'|'documents'|null>(null),[copied,setCopied]=useState(false);
  const [loanPercent,setLoanPercent]=useState(70),[interest,setInterest]=useState(8),[years,setYears]=useState(20);
- const amenities=assets.filter(a=>a.kind==='amenity');
+ const savedAmenities=assets.filter(a=>a.kind==='amenity');
+ const amenities:Asset[]=savedAmenities.length?savedAmenities:project.id==='grand-coast'?[{id:'masteri-reference-amenities',projectId:project.id,kind:'amenity',name:'Mặt bằng tổng thể và tiện ích',url:'https://pub-112acfbefe224fa18ee2bcc30b9a7874.r2.dev/tours/1788496468370_270cccf2.jpg'}]:[];
  const gallery=assets.filter(a=>['gallery','model','panorama'].includes(a.kind));
  const documents=assets.filter(a=>a.kind==='document');
  const layout=unit.layoutUrl;
