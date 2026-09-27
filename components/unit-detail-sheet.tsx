@@ -41,8 +41,10 @@ import {Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle} from '@/
 import {toast} from 'sonner';
 import type {Asset, Customer, Project, Reservation, Unit} from '@/lib/catalog';
 import {projectPath} from '@/lib/project-routes';
+import ProjectUnitView from './project-unit-view';
 
 type UnitDetailSheetProps={
+  immersive?:boolean;
   open:boolean;
   unit:Unit|null;
   project:Project;
@@ -88,7 +90,7 @@ function downloadUnit(unit:Unit,project:Project,status:string){
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
-export default function UnitDetailSheet({open,unit,project,units,assets,reservations,customers,now,statusOf,contactPhone='',favorite,compared,onOpenChange,onFavorite,onCompare,onReserve,onSelectRelated}:UnitDetailSheetProps){
+export default function UnitDetailSheet({immersive=false,open,unit,project,units,assets,reservations,customers,now,statusOf,contactPhone='',favorite,compared,onOpenChange,onFavorite,onCompare,onReserve,onSelectRelated}:UnitDetailSheetProps){
   const [tab,setTab]=useState('overview');
   const [lightbox,setLightbox]=useState<DetailAsset|null>(null);
   const [planZoom,setPlanZoom]=useState(1);
@@ -131,6 +133,8 @@ export default function UnitDetailSheet({open,unit,project,units,assets,reservat
   const planHref=projectPath(project.id,'plan');
   const vrHref=`${projectPath(project.id,'vr')}?product=${encodeURIComponent(unit?.code||'')}`;
   const zaloHref=contactPhone?`https://zalo.me/${contactPhone.replace(/\D/g,'')}`:'';
+
+  if(immersive&&unit)return <ProjectUnitView key={unit.id} open={open} unit={unit} project={project} assets={assets} units={units} status={status} phone={contactPhone} favorite={favorite} onClose={()=>onOpenChange(false)} onFavorite={onFavorite} onReserve={onReserve} onSelect={onSelectRelated}/>;
 
   return <Sheet open={open&&!!unit} onOpenChange={onOpenChange}>
     <SheetContent className="unit-sheet unit-detail-sheet">

@@ -75,3 +75,12 @@ Password login is disabled unless `ALPHA_ENABLE_PASSWORD_LOGIN=true` is explicit
 - Cookie phiên HttpOnly chứa mã ngẫu nhiên; chỉ lưu hash trong `alpha_sessions`, owner là UUID Supabase cho thành viên và `admin` cho quản trị. Đăng xuất thu hồi phiên hiện tại; hạn phiên 7 ngày.
 - Đăng nhập mật khẩu quản trị cũ, nếu được bật rõ ràng bằng `ALPHA_ENABLE_PASSWORD_LOGIN=true`, dùng `/api/auth/admin-password`; mặc định bị tắt. `/api/auth/login` dành cho Supabase email/password.
 - `npm test` kiểm thử đăng ký, xác nhận, đăng nhập, đăng xuất và cách ly quyền thành viên bằng dữ liệu giả lập, không gửi thư hay tạo người dùng thật.
+
+## Màn hình chi tiết căn toàn màn hình
+
+- Mở Dự án → Quỹ căn 360° / Bảng hàng → chọn căn để xem bố cục ba cột: tiện ích, ảnh/phiếu căn, thông tin thương mại.
+- Trong Quản lý quỹ căn → Sửa căn, trường **Đường dẫn ảnh phiếu căn** nhận URL HTTPS hoặc đường dẫn file `/api/files/...` đã tải lên. Khi có ảnh này, màn hình hiển thị nguyên ảnh; khi chưa có, ghép thông tin căn với phối cảnh dự án và ghi rõ ảnh tham khảo.
+- Trường **Đường dẫn mặt bằng căn** dành riêng cho layout của căn đó. Không tự lấy mặt bằng của căn khác.
+- Cột ảnh bên trái lấy file loại **Tiện ích** của đúng dự án; nếu chưa có thì dùng Thư viện / Nhà mẫu / Panorama của dự án.
+- Giá TTS, TTTĐ, giá vay, tổng giá trị, ngày chính sách và quà tặng lấy từ hồ sơ căn. Dữ liệu thiếu hiển thị “Chưa cập nhật”. Các căn mẫu vẫn là dữ liệu minh họa.
+- Phiếu giá tải CSV; tính lãi vay dùng giả định người dùng nhập và không phải báo giá ngân hàng. Giữ căn dùng luồng quản trị hiện có; chức năng không gửi đặt chỗ đến chủ đầu tư.
