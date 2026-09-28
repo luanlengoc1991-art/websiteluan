@@ -1,6 +1,7 @@
 'use client';
 
 import {useState} from 'react';
+import VinhTienDrawing from './vinh-tien-drawing';
 import {Calculator,Check,ChevronLeft,ChevronRight,Compass,Copy,Download,FileText,Gift,Heart,Image as ImageIcon,Layers,LayoutGrid,Link as LinkIcon,Lock,MapPin,Maximize,MessageCircle,Minus,PanelLeftClose,PanelLeftOpen,Phone,Plus,RotateCcw,Ruler,WalletCards,X} from 'lucide-react';
 import {Dialog,DialogContent,DialogDescription,DialogHeader,DialogTitle} from '@/components/ui/dialog';
 import {toast} from 'sonner';
@@ -52,7 +53,7 @@ export default function ProjectUnitView({open,unit,project,assets,units,status,p
      <div className="punit-stage-top"><div>{!railOpen&&<button className="punit-icon" onClick={()=>setRailOpen(true)} aria-label="Mở tiện ích"><PanelLeftOpen size={18}/></button>}<button className="punit-icon" onClick={onClose} aria-label="Về quỹ căn"><ChevronLeft size={18}/></button><span>{image?.name||'Phiếu thông tin căn'}</span></div><button className={'punit-icon '+(favorite?'selected':'')} onClick={onFavorite} aria-label={favorite?'Bỏ yêu thích':'Yêu thích căn'}><Heart size={18} fill={favorite?'currentColor':'none'}/></button></div>
      <div className="punit-stage-scroll">
       <div className="punit-media-transform" style={{width:`${zoom*100}%`}}>
-       {image?<Picture key={image.url} className="punit-original" src={image.url} alt={image.name}/>:unit.posterUrl?<Picture key={unit.posterUrl} className="punit-original" src={unit.posterUrl} alt={`Phiếu căn ${unit.code}`}/>:<article className="punit-poster">
+       {image?<Picture key={image.url} className="punit-original" src={image.url} alt={image.name}/>:unit.projectId==='green-paradise'?<VinhTienDrawing key={unit.code} unit={unit}/>:unit.posterUrl?<Picture key={unit.posterUrl} className="punit-original" src={unit.posterUrl} alt={`Phiếu căn ${unit.code}`}/>:<article className="punit-poster">
         <header><div><span className="punit-poster-brand">{project.name}</span><small>{project.developer}</small></div><div><h2>{unit.code}</h2><p>{unit.type} | {number(unit.area)} m²</p></div></header>
         <div className="punit-poster-prices"><div><span>GIÁ THAM KHẢO</span><strong>{price(unit.price)}</strong></div><div><span>GIÁ TTS</span><strong>{price(unit.priceTts)}</strong></div><div><span>GIÁ TTTĐ</span><strong>{price(unit.priceTttd)}</strong></div></div>
         <div className="punit-poster-image"><Picture src={project.image} alt={`Phối cảnh ${project.name}`}/><span><MapPin size={17}/>{project.location}</span></div>
@@ -74,7 +75,7 @@ export default function ProjectUnitView({open,unit,project,assets,units,status,p
       <section className="punit-card"><h2><WalletCards size={14}/>Giá chi tiết</h2><div className="punit-price-grid">{[['Giá TTS',unit.priceTts],['Giá vay',unit.priceLoan],['Giá TTTĐ',unit.priceTttd],['Tổng giá trị',unit.totalPrice]].map(([label,value])=><div key={String(label)}><span>{String(label)}</span><strong>{price(value)}</strong></div>)}</div></section>
       <section className="punit-card"><h2><FileText size={14}/>Bàn giao & tài liệu</h2><div className="punit-handover"><span>Nhóm quỹ</span><strong>{unit.group||'Chưa cập nhật'}</strong></div><div className="punit-doclinks"><button onClick={()=>setTool('documents')}><FileText size={19}/><span>Chính sách</span></button><button onClick={showLayout}><LayoutGrid size={19}/><span>Layout thiết kế</span></button><button onClick={()=>setTool('documents')}><Download size={19}/><span>Tài liệu dự án</span></button></div></section>
       <section className="punit-card"><h2><Gift size={14}/>Chính sách & Quà tặng</h2><div className="punit-price-grid"><div><span>CSBH áp dụng</span><strong>{unit.policyDate||'Chưa cập nhật'}</strong></div><div><span>Ưu đãi đặc biệt</span><strong>{unit.gift||'Chưa cập nhật'}</strong></div></div></section>
-      <p className="punit-disclaimer">{unit.sourceLabel&&<><strong>{unit.sourceLabel}</strong> · {unit.sourceCheckedAt?new Date(unit.sourceCheckedAt).toLocaleDateString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'}):''}<br/>Bản ghi tại thời điểm cập nhật, không đồng bộ trực tiếp. Cần xác nhận lại giá và trạng thái.<br/></>}{unit.note||'Thông tin và hình ảnh mang tính tham khảo. Vui lòng xác nhận với quản trị viên trước khi giao dịch.'}</p>
+      <p className="punit-disclaimer">{unit.sourceLabel&&<><strong>{unit.sourceLabel}</strong> · {unit.sourceCheckedAt?new Date(unit.sourceCheckedAt).toLocaleDateString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'}):''}<br/>{unit.projectId==='green-paradise'?'Đồng bộ Google Sheets mỗi 60 giây. Cần xác nhận lại giá và trạng thái.':'Bản ghi tại thời điểm cập nhật, không đồng bộ trực tiếp. Cần xác nhận lại giá và trạng thái.'}<br/></>}{unit.note||'Thông tin và hình ảnh mang tính tham khảo. Vui lòng xác nhận với quản trị viên trước khi giao dịch.'}</p>
      </div>
     </aside>
    </DialogContent>
