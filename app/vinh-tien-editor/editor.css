@@ -516,3 +516,6 @@ button { color:inherit; }
 
 /* Embedded editor retains the original poster proportions. */
 .studio-layout{width:96%;max-width:96%;grid-template-columns:minmax(240px,3fr) minmax(0,5fr);padding-top:18px;gap:18px}.studio-header{height:54px;padding:0 22px}.editor-panel{top:72px;max-height:calc(100vh - 90px)}.header-status{font-size:10px;letter-spacing:0}.header-status a{text-transform:none;color:#075c4c}.studio-app button{cursor:pointer}@media(max-width:760px){.studio-layout{grid-template-columns:minmax(0,1fr)}.editor-panel{position:relative;top:0;max-height:360px}}
+
+/* Do not inherit Alpha Hub logo framing inside the original poster. */
+.studio-app .brand-logo{background:transparent;border:0;border-radius:0;padding:0;height:auto;width:20.5cqw;max-height:18.5cqw}

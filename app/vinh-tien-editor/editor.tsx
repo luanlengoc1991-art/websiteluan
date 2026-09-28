@@ -770,6 +770,8 @@ function PricingQuote({ unit, customer, quoteDate, plan, vinClub, birthday, noBa
 
 export default function Home() {
   const [canEdit,setCanEdit]=useState(false);
+  const editVersion=useRef(0),savedVersion=useRef(0);
+  const markEdited=()=>{editVersion.current+=1;};
   const requestedCode=useRef("");
   useEffect(()=>{requestedCode.current=new URLSearchParams(window.location.search).get("code")||"";},[]);
   const initialUnits = useRef<UnitRecord[]>(createCatalogUnits());
@@ -1007,9 +1009,10 @@ export default function Home() {
   }, [stateReady, activeUnitId, content, images, perspectives, galleryPerspectives, activeGallerySlot, villaPerspectives, activeVillaGallerySlot, amenityPerspectives, activeAmenityGallerySlot, mainMarker, mapMarker]);
 
   useEffect(() => {
-    if (!stateReady || !canEdit) return;
+    if (!stateReady || !canEdit || editVersion.current===savedVersion.current) return;
     setSaveStatus("saving");
     const timer = window.setTimeout(async () => {
+      const versionBeingSaved=editVersion.current;
       const snapshot: SavedPortfolioState = { version: 2, dataRevision: unitCatalogRevision, activeUnitId, units };
       try {
         const response = await fetch("/api/vinh-tien/api/state", {
@@ -1018,7 +1021,8 @@ export default function Home() {
           body: JSON.stringify(snapshot),
         });
         if (!response.ok) throw new Error("Không thể lưu");
-        setSaveStatus("saved");
+        savedVersion.current=versionBeingSaved;
+        setSaveStatus(editVersion.current===versionBeingSaved?"saved":"saving");
       } catch {
         setSaveStatus("error");
       }
@@ -1550,7 +1554,7 @@ export default function Home() {
   };
 
   return (
-    <main className="studio-app">
+    <main className="studio-app" onChangeCapture={markEdited} onPointerUpCapture={markEdited} onClickCapture={markEdited}>
       <header className="studio-header">
         <div className="studio-brand">
           <span className="va-mark"><b>VA</b></span>
