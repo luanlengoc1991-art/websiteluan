@@ -1554,13 +1554,13 @@ export default function Home() {
   };
 
   return (
-    <main className="studio-app" onChangeCapture={markEdited} onPointerUpCapture={markEdited} onClickCapture={markEdited}>
+    <main className={`studio-app ${canEdit?"is-editor":"is-viewer"}`} onChangeCapture={canEdit?markEdited:undefined} onPointerUpCapture={canEdit?markEdited:undefined} onClickCapture={canEdit?markEdited:undefined}>
       <header className="studio-header">
         <div className="studio-brand">
           <span className="va-mark"><b>VA</b></span>
           <span><strong>VIETALAND STUDIO</strong><small>Property presentation builder</small></span>
         </div>
-        <div className="header-status"><span />{canEdit?"Chỉnh sửa · Tự động lưu":<a href="/dang-nhap?return_to=%2Fdu-an%2Fvinhomes-green-paradise%2Fquy-can-360" target="_top">Đăng nhập quản trị để lưu · Có thể thử kéo thả</a>}</div>
+        <div className="header-status"><span />{canEdit?"Quản trị · Tự động lưu":<a href="/dang-nhap?return_to=%2Fdu-an%2Fvinhomes-green-paradise%2Fquy-can-360" target="_top">Chế độ xem · Đăng nhập quản trị để chỉnh sửa</a>}</div>
       </header>
 
       <div className="studio-layout">
@@ -1658,7 +1658,7 @@ export default function Home() {
               <span />
               {saveStatus === "loading" && "Đang khôi phục bản gần nhất…"}
               {saveStatus === "saving" && "Đang tự động lưu…"}
-              {saveStatus === "saved" && (canEdit?"Đã tự động lưu bản mới nhất":"Bản xem thử · Đăng nhập quản trị để lưu thay đổi")}
+              {saveStatus === "saved" && (canEdit?"Đã tự động lưu bản mới nhất":"Chế độ chỉ xem")}
               {saveStatus === "error" && "Chưa thể lưu — vui lòng thử lại"}
             </div>
           </div>

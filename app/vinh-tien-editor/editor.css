@@ -519,3 +519,10 @@ button { color:inherit; }
 
 /* Do not inherit Alpha Hub logo framing inside the original poster. */
 .studio-app .brand-logo{background:transparent;border:0;border-radius:0;padding:0;height:auto;width:20.5cqw;max-height:18.5cqw}
+
+/* Public visitors can view the generated unit sheet; editing is reserved for admins. */
+.studio-app.is-viewer .studio-layout{grid-template-columns:minmax(0,1fr);max-width:100%;width:100%;padding:18px 20px 44px}
+.studio-app.is-viewer .editor-panel{display:none}
+.studio-app.is-viewer .workspace{max-width:1120px;margin:0 auto;width:100%}
+.studio-app.is-viewer .image-frame,.studio-app.is-viewer .draggable-marker{cursor:default;pointer-events:none}
+.studio-app.is-viewer .frame-action,.studio-app.is-viewer .zoom-controls,.studio-app.is-viewer .drag-tip,.studio-app.is-viewer .marker-scale-controls,.studio-app.is-viewer .draggable-marker small,.studio-app.is-viewer .poster-lock-notice{display:none!important}
