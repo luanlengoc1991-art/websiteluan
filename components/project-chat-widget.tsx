@@ -5,9 +5,10 @@ import {Dialog,DialogContent,DialogTitle,DialogDescription} from '@/components/u
 import ContactForm from './contact-form';
 import Link from './site-link';
 import {projectPath} from '@/lib/project-routes';
+import {classifyCustomerMessage,normalizeCustomerMessage} from '@/lib/customer-care';
 import type {Project,Unit} from '@/lib/catalog';
 type Reply={role:'user'|'assistant';text:string;links?:{label:string;href:string}[]};
-const normalize=(s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').toLowerCase();
+const normalize=normalizeCustomerMessage;
 const money=(n:number)=>n.toLocaleString('vi-VN',{maximumFractionDigits:3});
 export default function ProjectChatWidget({projects,units,phone,projectId,statusOf}:{projects:Project[];units:Unit[];phone:string;projectId?:string;statusOf:(u:Unit)=>string}){
  const [open,setOpen]=useState(false),[selected,setSelected]=useState(projectId||''),[input,setInput]=useState(''),[contact,setContact]=useState(false);
@@ -19,8 +20,10 @@ export default function ProjectChatWidget({projects,units,phone,projectId,status
   const text=question.trim().slice(0,500);if(!text)return;setInput('');setContact(false);const q=normalize(text);let scope=chosen;
   const direct=projects.find(p=>q.includes(normalize(p.name))||q.includes(normalize(p.id).replaceAll('-',' ')));if(direct){scope=direct;setSelected(direct.id);}
   const exact=units.find(u=>q.includes(normalize(u.code)));let answer:Reply;
-  if(exact){const p=projects.find(p=>p.id===exact.projectId);answer={role:'assistant',text:`${exact.code} · ${p?.name||''}\n${exact.type} · ${money(exact.area)} m² · ${exact.direction}\nGiá tham khảo: ${money(exact.price)} tỷ. Trạng thái trên website: ${statusOf(exact)}.`,links:[{label:'Xem chi tiết căn',href:projectPath(exact.projectId)+'?product='+encodeURIComponent(exact.code)}]};}
-  else if(/lien he|hotline|zalo|tu van|nhan vien/.test(q)){setContact(true);answer={role:'assistant',text:hasPhone?`Bạn có thể gọi ${phone}, mở Zalo hoặc để lại thông tin bên dưới để được tư vấn.`:'Hotline/Zalo đang được cập nhật. Bạn có thể gửi yêu cầu tư vấn bên dưới.'};}
+  const intent=classifyCustomerMessage(text);
+  if(intent==='sensitive'){setContact(true);answer={role:'assistant',text:'Yêu cầu này cần tư vấn viên xử lý trực tiếp. Trợ lý không tự cam kết giảm giá, hoàn tiền, đặt cọc, hợp đồng hoặc kết quả giao dịch. Bạn có thể để lại thông tin bên dưới để chủ sở hữu liên hệ và xác nhận.'};}
+  else if(exact){const p=projects.find(p=>p.id===exact.projectId);answer={role:'assistant',text:`${exact.code} · ${p?.name||''}\n${exact.type} · ${money(exact.area)} m² · ${exact.direction}\nGiá tham khảo: ${money(exact.price)} tỷ. Trạng thái trên website: ${statusOf(exact)}.`,links:[{label:'Xem chi tiết căn',href:projectPath(exact.projectId)+'?product='+encodeURIComponent(exact.code)}]};}
+  else if(intent==='contact'){setContact(true);answer={role:'assistant',text:hasPhone?`Bạn có thể gọi ${phone}, mở Zalo hoặc để lại thông tin bên dưới để được tư vấn.`:'Hotline/Zalo đang được cập nhật. Bạn có thể gửi yêu cầu tư vấn bên dưới.'};}
   else if(scope){const all=units.filter(u=>u.projectId===scope.id);const budget=q.match(/(?:duoi|toi da|tam|khoang|ngan sach)\s*(\d+(?:[.,]\d+)?)\s*(?:ty|ti)/);const max=budget?Number(budget[1].replace(',','.')):null;const available=all.filter(u=>statusOf(u)==='Còn hàng'&&(max===null||u.price<=max));const prices=all.map(u=>u.price).filter(n=>n>0);answer={role:'assistant',text:`${scope.name}\n${scope.location}\nWebsite có ${all.length} căn, ${all.filter(u=>statusOf(u)==='Còn hàng').length} căn đang hiển thị còn hàng.${prices.length?` Giá tham khảo từ ${money(Math.min(...prices))} đến ${money(Math.max(...prices))} tỷ.`:''}${max!==null?`\nCó ${available.length} căn còn hàng với giá không quá ${money(max)} tỷ.`:''}\nGiá và trạng thái cần xác nhận lại với tư vấn viên.`,links:[{label:'Mở bảng hàng dự án',href:projectPath(scope.id,'inventory')},...available.slice(0,3).map(u=>({label:`${u.code} · ${money(u.price)} tỷ`,href:projectPath(u.projectId)+'?product='+encodeURIComponent(u.code)}))]};}
   else{const words=q.split(/\s+/).filter(w=>w.length>2&&!['xem','gia','can','tim','cho','toi','bao','nhieu','duoi','tren'].includes(w));const matching=projects.filter(p=>words.some(w=>normalize(p.name+' '+p.location).includes(w)));const options=matching.length?matching:projects.slice(0,4);answer={role:'assistant',text:'Hãy chọn dự án phía trên để tra giá và quỹ căn, hoặc nhập mã căn cụ thể. Một số dự án bạn có thể xem:',links:options.slice(0,5).map(p=>({label:`${p.name} · ${units.filter(u=>u.projectId===p.id).length} căn`,href:projectPath(p.id,'inventory')}))};}
   setMessages(prev=>[...prev.slice(-28),{role:'user',text},answer]);

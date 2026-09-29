@@ -11,7 +11,8 @@
     "start": "next start",
     "setup": "node scripts/setup.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "node scripts/test-production.mjs"
+    "test": "node scripts/test-production.mjs",
+    "test:chatbot": "node scripts/test-customer-care.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
