@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {classifyCustomerMessage} from '../lib/customer-care.ts';
+import {publicContact} from '../lib/public-contact.ts';
 
 const cases=[
  ['Tôi muốn hoàn tiền','sensitive'],
@@ -12,4 +13,11 @@ for(const [message,expected] of cases){
  assert.equal(classifyCustomerMessage(message),expected,`Sai phân loại: ${message}`);
 }
 
-console.log(JSON.stringify({ok:true,cases:cases.length}));
+assert.deepEqual(publicContact,{
+ phone:'0343977651',
+ email:'luanlengoc1991@gmail.com',
+ zaloHref:'https://zalo.me/0343977651',
+ facebookHref:'https://www.facebook.com/luan.lengoc.5/',
+});
+
+console.log(JSON.stringify({ok:true,cases:cases.length,publicContact:true}));

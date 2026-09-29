@@ -418,7 +418,7 @@
 .project-chat-compose button:disabled{opacity:.4}
 .project-chat-footnote{background:white;text-align:center;font-size:10px;color:#7b8da0;padding:0 8px 10px;margin:0}
 .chat-contact-form{border:1px solid #d6e5f1;border-radius:16px;padding:14px;background:white;margin:10px 0}
-.chat-contact-form h3{display:flex;gap:7px;font-size:15px}.chat-contact-form p{font-size:12px}.chat-contact-form input:not([type=hidden]){width:100%;min-width:0;border:1px solid #d8e5ef;border-radius:9px;padding:10px;font-size:13px}.chat-contact-form small{font-size:10px}.chat-direct-links{display:flex;gap:12px;font-size:13px;color:#067dd5;margin-bottom:12px}
+.chat-contact-form h3{display:flex;gap:7px;font-size:15px}.chat-contact-form p{font-size:12px}.chat-contact-form input:not([type=hidden]){width:100%;min-width:0;border:1px solid #d8e5ef;border-radius:9px;padding:10px;font-size:13px}.chat-contact-form small{font-size:10px}.chat-direct-links{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:#067dd5;margin-bottom:12px}.chat-direct-links a{border:1px solid #cde1f4;border-radius:16px;padding:6px 9px;background:#f5faff}
 @media(max-width:600px){.project-contact-dock{right:12px;bottom:calc(18px + env(safe-area-inset-bottom))}.project-contact-dock>a,.project-contact-dock>button{width:47px;height:47px}.project-chat-panel[data-slot=dialog-content]{right:10px;bottom:calc(10px + env(safe-area-inset-bottom));width:calc(100vw - 20px);height:min(650px,calc(100dvh - 20px));max-height:calc(100dvh - 20px)}.immersive-site .project-contact-dock{bottom:calc(105px + env(safe-area-inset-bottom))}}
 
 /* Vinh Tien: saved source drawing, scoped to Green Paradise. */
